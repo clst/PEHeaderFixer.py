@@ -5,8 +5,11 @@ import json
 import sys
 from pathlib import Path
 from pprint import pprint
+from warnings import warn
 
 import pefile
+
+warn("We have moved from M$ GitHub to https://codeberg.org/KOLANICH-tools/PEHeaderEditor.py  , read why on https://codeberg.org/KOLANICH/Fuck-GuanTEEnomo .")
 
 presets = {
 	"winxp": {
