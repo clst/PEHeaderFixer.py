@@ -6,10 +6,10 @@ import sys
 from pathlib import Path
 from pprint import pprint
 from warnings import warn
+from glob import glob
+import gc
 
 import pefile
-
-warn("We have moved from M$ GitHub to https://codeberg.org/KOLANICH-tools/PEHeaderEditor.py  , read why on https://codeberg.org/KOLANICH/Fuck-GuanTEEnomo .")
 
 presets = {
 	"winxp": {
@@ -34,10 +34,10 @@ presets = {
 
 
 def main():
-	parser = argparse.ArgumentParser(description="CLI tool to work with some GitHub API")
+	parser = argparse.ArgumentParser(description="CLI tool to fix EXE files for older Windows")
 	parser.add_argument("--json", type=str, default=None, help="A file with JSON string, describing which fields of the header to patch")
 	parser.add_argument("--preset", type=str, default=None, help="A hardcoded preset")
-	parser.add_argument("file", type=str, nargs="+", help="Path to a file to upload")
+	parser.add_argument("file", type=str, nargs="+", help="Path to a file to patch")
 	args = parser.parse_args()
 
 	toPatch = {}
@@ -54,9 +54,22 @@ def main():
 
 	pprint(toPatch)
 
-	args.file = [Path(el) for el in args.file]
+	if args.file[0] == "**":
+		#patch everything hidden option:
+		args.file = []
+		args.file.extend(Path('.').glob('**/*.exe'))
+		args.file.extend(Path('.').glob('**/*.dll'))
+	else:
+		for f in args.file[:]:
+			args.file.remove(f)
+			if '*' in f:
+				args.file += glob(f)
+			else:
+				args.file.append(Path(f))
 
+	print(args)
 	for f in args.file:
+		print(f)
 		p = pefile.PE(f)
 
 		patched = False
@@ -76,7 +89,11 @@ def main():
 							print(f, ":", k, ":", oldV, "->", v)
 
 		if patched:
-			p.write(f)
+			tempdata = p.write()
+			del p
+			gc.collect()
+			with open(str(f),'wb+') as fn:
+				fn.write(tempdata)
 
 
 if __name__ == "__main__":
